@@ -1,0 +1,147 @@
+*********************R2************************
+en
+conf t
+hostname ISP
+line vty 0 4
+logging synchronous
+
+int s0/3/0
+ip address 10.1.1.2 255.255.255.252
+no shutdown
+
+int s0/3/1
+ip address 10.2.2.2 255.255.255.252
+clock rate 128000
+no shutdown
+
+int l0
+ip address 209.165.200.225 255.255.255.224
+no shutdown
+
+int l1
+ip address 209.165.201.1 255.255.255.224
+no shutdown
+
+ex
+
+ip route 0.0.0.0 0.0.0.0 loopback 0
+
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 10.2.2.0 0.0.0.3 area 0
+default-information originate
+ex
+
+*********************R1************************
+en
+conf t
+hostname R1
+line vty 0 4
+logging synchronous
+
+int f0/1
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+
+int s0/3/0
+ip address 10.1.1.1 255.255.255.252
+clock rate 128000
+no shutdown
+
+int l0
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+ex
+
+router ospf 1
+network 192.168.10.0 0.0.0.255 area 0
+network 192.168.20.0 0.0.0.255 area 0
+network 10.1.1.0 0.0.0.3 area 0
+ex
+
+//ip http server
+//ip http authentication local
+//username admin privilege 15 secret class
+*********************PART2************************
+access-list 100 remark Allow Web & SSH Access
+access-list 100 permit tcp host 192.168.10.3 host 10.2.2.1 eq 22
+access-list 100 permit tcp any any eq 80
+
+interface s0/3/0
+ip access-group 100 out
+ex
+*********************PART3************************
+ip access-list extended 100
+30 permit ip 192.168.10.0 0.0.0.255 192.168.30.0 0.0.0.255
+ex
+*********************R3************************
+en
+conf t
+hostname R3
+line vty 0 4
+logging synchronous
+
+int f0/1
+ip address 192.168.30.1 255.255.255.0
+no shutdown
+
+int s0/3/1
+ip address 10.2.2.1 255.255.255.252
+no shutdown
+
+int l0
+ip address 192.168.40.1 255.255.255.0
+no shutdown
+
+ex
+
+ip domain-name cisco.com
+crypto key generate rsa modulus 1024
+line vty 0 4
+login local
+transport input ssh
+ex
+
+router ospf 1
+network 192.168.30.0 0.0.0.255 area 0
+network 192.168.40.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+ex
+*********************PART2************************
+ip access-list extended WEB-POLICY
+permit tcp 192.168.30.0 0.0.0.255 host 10.1.1.1 eq 80
+permit tcp 192.168.30.0 0.0.0.255 209.165.200.224 0.0.0.31 eq 80
+ex
+interface S0/3/1
+ip access-group WEB-POLICY out
+ex
+*********************PART3************************
+ip access-list extended WEB-POLICY
+30 permit ip 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255
+ex
+
+*********************S1************************
+en
+conf t
+hostname S1
+line vty 0 4
+logging synchronous
+
+interface vlan 1
+ip address 192.168.10.11 255.255.255.0
+ex
+
+ip default-gateway 192.168.10.1  
+*********************S3************************
+en
+conf t
+hostname S3
+line vty 0 4
+logging synchronous
+
+interface vlan 1
+ip address 192.168.30.11 255.255.255.0
+ex
+
+ip default-gateway 192.168.30.1

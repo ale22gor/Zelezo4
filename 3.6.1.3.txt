@@ -1,0 +1,110 @@
+**********************************R1*********************
+en
+conf t
+hostname Cust1
+line vty 0 4
+logging synchronous
+
+
+no cdp run
+interface l1
+ip address 209.165.200.49 255.255.255.240
+interface f0/0
+ip address 192.168.1.1 255.255.255.0
+no shut
+interface s0/3/0
+ip address 209.165.200.81 255.255.255.252
+no shut
+ip route 0.0.0.0 0.0.0.0 s0/3/0 25
+
+interface Virtual-Template1
+peer default ip address pool PPPoEPOOL
+ppp authentication chap callin
+ppp chap hostname Cust1
+ppp chap password ciscopppoe
+peer default ip address pool 1 
+
+int f0/1
+pppoe enable group global
+pppoe-client dial-pool-number 1
+no shutdown
+
+interface tunnel 0
+ip address 192.168.2.1 255.255.255.0
+tunnel mode gre ip
+tunnel source serial 0/3/0
+tunnel destination 209.165.200.86
+ex
+
+router bgp 65000
+network 209.165.200.49 mask 255.255.255.240
+network 192.168.1.1 mask 255.255.255.0
+neighbor 192.168.2.2 remote-as 65000
+
+ex
+end
+
+
+
+**********************************R2*********************
+en
+conf t
+hostname ISP
+line vty 0 4
+logging synchronous
+
+username Cust1 password 0 ciscopppoe
+
+
+bba-group pppoe global
+virtual-template 1
+
+interface l1
+ip address 209.165.200.65 255.255.255.240
+interface f0/0
+ip tcp adjust-mss 1452
+pppoe enable group global
+no shut
+interface s0/3/0
+ip address 209.165.200.82 255.255.255.252
+no shut
+interface s0/3/1
+ip address 209.165.200.85 255.255.255.252
+no shut
+interface Virtual-Template1
+peer default ip address pool PPPoEPOOL
+ppp authentication chap callin
+router bgp 65001
+network 0.0.0.0
+neighbor 209.165.200.1 remote-as 65000
+ip local pool PPPoEPOOL 209.165.200.1 209.165.200.20
+ip route 0.0.0.0 0.0.0.0 l1
+end
+
+**********************************R3*********************
+en
+conf t
+hostname Branch1
+line vty 0 4
+logging synchronous
+
+
+interface f0/1
+ip address 192.168.3.1 255.255.255.0
+no shut
+interface s0/3/1
+ip address 209.165.200.86 255.255.255.252
+no shut
+ip route 0.0.0.0 0.0.0.0 s0/3/1
+
+interface tunnel 0
+ip address 192.168.2.1 255.255.255.0
+tunnel mode gre ip
+tunnel source serial 0/3/1
+tunnel destination 209.165.200.81
+ex
+router bgp 65000
+network 192.168.3.1 mask 255.255.255.0
+neighbor 192.168.2.1 remote-as 65000
+
+end

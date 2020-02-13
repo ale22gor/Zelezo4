@@ -1,0 +1,118 @@
+*********************R1************************
+en
+conf t
+hostname Central
+line vty 0 4
+logging synchronous
+
+int s0/3/0
+ip address 10.1.1.2 255.255.255.252
+no shutdown
+
+int s0/3/1
+ip address 10.2.2.2 255.255.255.252
+clock rate 128000
+no shutdown
+
+int l0
+ip address 209.165.200.225 255.255.255.224
+no shutdown
+
+ex
+
+ip route 0.0.0.0 0.0.0.0 loopback 0
+
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 0
+network 10.2.2.0 0.0.0.3 area 0
+default-information originate
+ex
+********************Part2***************************
+int s0/3/0
+encapsulation ppp
+
+//encapsulation hdlc
+
+int s0/3/1
+encapsulation ppp
+ex
+********************Part3***************************
+username Branch3 password cisco
+username Branch1 password cisco
+
+int s0/3/0
+ppp authentication chap
+
+int s0/3/1
+ppp authentication chap
+*********************R2************************
+en
+conf t
+hostname Branch1
+line vty 0 4
+logging synchronous
+
+int f0/1
+ip address 192.168.1.1 255.255.255.0
+no shutdown
+
+int s0/3/0
+ip address 10.1.1.1 255.255.255.252
+clock rate 128000
+no shutdown
+ex
+
+router ospf 1
+network 192.168.1.0 0.0.0.255 area 0
+network 10.1.1.0 0.0.0.3 area 0
+ex
+
+********************Part2***************************
+int s0/3/0
+encapsulation ppp
+//cut down s0/3/0
+//debug ppp negotiation
+//debug ppp packet
+
+ex
+********************Part3***************************
+
+username Central password cisco
+
+//debug ppp negotiation
+//debug ppp packet
+//debug ppp authentication
+
+int s0/3/0
+ppp authentication chap
+
+*********************R3************************
+en
+conf t
+hostname Branch3
+line vty 0 4
+logging synchronous
+
+int f0/1
+ip address 192.168.3.1 255.255.255.0
+no shutdown
+
+int s0/3/1
+ip address 10.2.2.1 255.255.255.252
+no shutdown
+ex
+
+router ospf 1
+network 192.168.3.0 0.0.0.255 area 0
+network 10.2.2.0 0.0.0.3 area 0
+ex
+
+********************Part2***************************
+int s0/3/1
+encapsulation ppp
+ex
+********************Part3***************************
+username Central password cisco
+
+int s0/3/1
+ppp authentication chap

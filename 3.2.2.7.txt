@@ -1,0 +1,45 @@
+********************R1***************
+en
+conf t
+hostname Cust1
+line vty 0 4
+logging synchronous
+interface f0/1
+pppoe enable
+pppoe-client dial-pool-number 1
+no shutdown
+ex
+interface dialer 1
+mtu 1492
+ip address negotiated
+encapsulation ppp
+dialer pool 1
+ppp authentication chap callin
+ppp chap hostname Cust1
+ppp chap password ciscopppoe
+ex
+ip route 0.0.0.0 0.0.0.0 dialer 1
+end
+debug ppp authentication
+debug pppoe events
+
+********************R2***************
+en
+conf t
+hostname ISP
+line vty 0 4
+logging synchronous
+username Cust1 password ciscopppoe
+ip local pool PPPoEPOOL 10.0.0.1 10.0.0.10
+interface virtual-template 1
+ip address 10.0.0.254 255.255.255.0
+mtu 1492
+peer default ip address pool PPPoEPOOL
+ppp authentication chap callin
+ex
+bba-group pppoe global
+virtual-template 1
+ex
+interface f0/1
+pppoe enable group global
+no shutdown
