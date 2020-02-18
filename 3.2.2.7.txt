@@ -10,7 +10,7 @@ pppoe-client dial-pool-number 1
 no shutdown
 ex
 interface dialer 1
-mtu 1492
+ip mtu 1492
 ip address negotiated
 encapsulation ppp
 dialer pool 1
@@ -33,7 +33,7 @@ username Cust1 password ciscopppoe
 ip local pool PPPoEPOOL 10.0.0.1 10.0.0.10
 interface virtual-template 1
 ip address 10.0.0.254 255.255.255.0
-mtu 1492
+ip mtu 1492
 peer default ip address pool PPPoEPOOL
 ppp authentication chap callin
 ex
